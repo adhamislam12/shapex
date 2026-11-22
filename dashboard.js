@@ -4,7 +4,7 @@
  let data={version:1,transformations:[],testimonials:[]},tab='transformations',signedIn=false,revision=null,dirty=false,busy=false;
  const safeImage=v=>cloud.isPhoto(v)||typeof v==='string'&&/^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v);
  const message=text=>$('#status').textContent=text;
- function buttons(){ $('#publish').disabled=!signedIn||!dirty||busy;$('#add-button').disabled=busy;$('#connect button').disabled=busy||signedIn;$('#logout').disabled=busy; }
+ function buttons(){ $('#publish').disabled=!signedIn||!dirty||busy;$('#add-button').disabled=!signedIn||busy;$('#connect button').disabled=busy||signedIn;$('#logout').disabled=busy; }
  function changed(){dirty=true;render();}
  function render(){
   for(const key of ['transformations','testimonials']){$('#count-'+key).textContent=data[key].length;$('#tab-'+key).setAttribute('aria-pressed',String(tab===key));}
@@ -18,7 +18,7 @@
    for(const [label,action,disabled] of [['للأعلى',()=>{[data[tab][index-1],data[tab][index]]=[data[tab][index],data[tab][index-1]];changed()},index===0],['للأسفل',()=>{[data[tab][index+1],data[tab][index]]=[data[tab][index],data[tab][index+1]];changed()},index===data[tab].length-1],['حذف من الموقع',()=>{if(confirm('حذف هذه الصورة من العرض؟ لن يتغير الموقع حتى تضغط نشر.')){data[tab].splice(index,1);changed()}},false]]){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=disabled||busy;b.onclick=action;actions.append(b)}card.append(actions);$('#items').append(card);
   });buttons();
  }
- function fields(){const pair=tab==='transformations'&&$('#mode').value==='pair';$('#pair-inputs').hidden=!pair;$('#single-input').hidden=pair;$('#mode-wrap').hidden=tab!=='transformations';$('#editor-title').textContent=tab==='transformations'?'إضافة نتيجة قبل وبعد':'إضافة رأي عميل / محادثة واتساب';}
+ function fields(){const pair=tab==='transformations'&&$('#mode').value==='pair';$('#pair-inputs').hidden=!pair;$('#single-input').hidden=pair;$('#mode-wrap').hidden=tab!=='transformations';$('#before').required=$('#after').required=pair;$('#image').required=tab==='transformations'&&!pair;$('#editor-title').textContent=tab==='transformations'?'إضافة نتيجة قبل وبعد':'إضافة رأي عميل / محادثة واتساب';}
  for(const key of ['transformations','testimonials'])$('#tab-'+key).onclick=()=>{tab=key;fields();render()};$('#mode').onchange=fields;
  async function compress(file){
   if(!file||!['image/png','image/jpeg','image/webp'].includes(file.type))throw Error('اختر صورة JPG أو PNG أو WebP.');
@@ -27,7 +27,7 @@
  }
  $('#add').onsubmit=async e=>{e.preventDefault();if(busy)return;if(data[tab].length>=50){message('الحد الأقصى 50 مشاركة لكل قسم.');return}busy=true;buttons();try{
   const item={id:crypto.randomUUID(),title:$('#title').value.trim(),caption:$('#caption').value.trim()};
-  if(tab==='transformations'&&$('#mode').value==='pair'){item.before=await compress($('#before').files[0]);item.after=await compress($('#after').files[0])}else item.image=await compress($('#image').files[0]);
+  if(tab==='transformations'&&$('#mode').value==='pair'){item.before=await compress($('#before').files[0]);item.after=await compress($('#after').files[0])}else if($('#image').files[0])item.image=await compress($('#image').files[0]);else if(tab!=='testimonials'||!(item.title||item.caption))throw Error('اكتب رأي العميل أو اختر صورة للمحادثة.');
   if(new Blob([JSON.stringify(data)]).size+new Blob([JSON.stringify(item)]).size>40*1024*1024)throw Error('المكتبة وصلت للحجم المتاح (40 ميجابايت). احذف صورًا قديمة أو صغّرها.');
   data[tab].push(item);$('#add').reset();fields();dirty=true;message('اتضافت للمسودة. راجع المعاينة واضغط نشر لإظهارها للزوار.');
  }catch(err){message(err.message)}finally{busy=false;render()}};
@@ -35,7 +35,7 @@
  async function loadPublished(){const result=await cloud.load();data=result.data;revision=result.revision;dirty=false;render();}
  $('#connect').onsubmit=async e=>{e.preventDefault();if(busy)return;if(dirty&&!confirm('تحميل المحتوى المنشور سيستبدل المسودة. تكمّل؟'))return;busy=true;buttons();message('جاري تسجيل الدخول بحساب Google…');try{await cloud.connect();signedIn=true;await loadPublished();$('#connection').textContent='تم الدخول بحساب إدارة ShapeX';$('#logout').hidden=false;message('جاهز لرفع الصور والنشر.');}catch(err){message(errorText(err))}finally{busy=false;render()}};
  $('#logout').onclick=async()=>{if(dirty&&!confirm('عند تسجيل الخروج ستفقد التعديلات غير المنشورة. تكمّل؟'))return;try{await cloud.disconnect();signedIn=false;data={version:1,transformations:[],testimonials:[]};dirty=false;revision=null;$('#logout').hidden=true;$('#connection').textContent='سجّل بحساب Google لبدء الإدارة';message('تم تسجيل الخروج.');render()}catch(err){message(errorText(err))}};
- $('#publish').onclick=async()=>{if(!signedIn||!dirty||busy)return;if(!confirm('نشر الصور والآراء للعامة على موقع ShapeX؟'))return;busy=true;render();message('جاري نشر الصور…');try{const result=await cloud.publish(data,revision,(done,total)=>message('جاري رفع الصور '+done+' / '+total));data=result.data;revision=result.revision;dirty=false;message('تم النشر. الصور متاحة الآن على الموقع لكل الزوار.');}catch(err){message(errorText(err))}finally{busy=false;render()}};
+ $('#publish').onclick=async()=>{if(!signedIn||!dirty||busy)return;if(!confirm('نشر الصور والآراء للعامة على موقع ShapeX؟'))return;busy=true;render();message('جاري نشر الصور…');try{const result=await cloud.publish(data,revision,(done,total)=>message('جاري رفع الصور '+done+' / '+total));const verified=await cloud.load();if(verified.revision!==result.revision)throw Error('تم حفظ التعديلات لكن تعذّر تأكيد آخر نسخة. افتح الموقع للتحقق قبل إعادة المحاولة.');data=verified.data;revision=verified.revision;dirty=false;message('تم النشر والتحقق: '+data.transformations.length+' قبل وبعد، '+data.testimonials.length+' آراء عملاء.');const link=$('#published-link');if(link){link.href='./?gallery='+encodeURIComponent(revision)+'#results';link.hidden=false;}try{localStorage.setItem('shapex-gallery-updated',revision)}catch{}}catch(err){message(errorText(err))}finally{busy=false;render()}};
  cloud.session(async user=>{signedIn=!!user;$('#logout').hidden=!signedIn;$('#connect button').disabled=signedIn;$('#connection').textContent=signedIn?'تم الدخول بحساب إدارة ShapeX':'سجّل بحساب Google لبدء الإدارة';if(signedIn&&!dirty&&!busy){try{await loadPublished()}catch(err){message(errorText(err))}}buttons()}).catch(err=>message(errorText(err)));
  window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
  fields();render();
