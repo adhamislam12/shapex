@@ -73,3 +73,5 @@ body{position:relative;isolation:isolate}
 /* Remove secondary labels and give the shorter copy room to breathe. */
 .section-shell>.section-heading .eyebrow,.panel-copy>.eyebrow,.roadmap-heading>.eyebrow{display:none}
 .hero-text p:not(.latin-tagline){max-width:440px}.features{margin-bottom:25px}.package-card .button{margin-top:auto}
+
+.proof-section h3{color:var(--gold);font-size:26px;margin:25px 0}.proof-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}.proof-card{border:1px solid var(--line);background:var(--raised);border-radius:22px;padding:16px;min-width:0}.proof-card img{width:100%;height:auto;max-height:580px;object-fit:contain;border-radius:12px}.proof-card h4{margin:15px 0 8px;font-size:20px}.proof-card p{white-space:pre-wrap;overflow-wrap:anywhere}.proof-pair{display:flex;gap:8px;direction:rtl}.proof-pair figure{margin:0;flex:1;min-width:0}.proof-pair img{height:260px;object-fit:contain}.proof-pair figcaption{text-align:center;color:var(--gold);padding-top:8px}@media(max-width:900px){.proof-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.proof-grid{grid-template-columns:1fr}}
