@@ -25,10 +25,10 @@
   if(file.size>15*1024*1024)throw Error('الصورة أكبر من 15 ميجابايت.');
   const bitmap=await createImageBitmap(file);try{const scale=Math.min(1,1200/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);const result=canvas.toDataURL('image/webp',.82);if(result.length>800000)throw Error('الصورة كبيرة بعد الضغط. جرّب صورة أصغر.');return result;}finally{bitmap.close()}
  }
- $('#add').onsubmit=async e=>{e.preventDefault();if(busy)return;if(data[tab].length>=30){message('الحد الأقصى 30 مشاركة لكل قسم.');return}busy=true;buttons();try{
+ $('#add').onsubmit=async e=>{e.preventDefault();if(busy)return;if(data[tab].length>=50){message('الحد الأقصى 50 مشاركة لكل قسم.');return}busy=true;buttons();try{
   const item={id:crypto.randomUUID(),title:$('#title').value.trim(),caption:$('#caption').value.trim()};
   if(tab==='transformations'&&$('#mode').value==='pair'){item.before=await compress($('#before').files[0]);item.after=await compress($('#after').files[0])}else item.image=await compress($('#image').files[0]);
-  if(new Blob([JSON.stringify(data)]).size+new Blob([JSON.stringify(item)]).size>6*1024*1024)throw Error('المكتبة وصلت للحجم المتاح (6 ميجابايت). احذف صورًا قديمة أو صغّرها.');
+  if(new Blob([JSON.stringify(data)]).size+new Blob([JSON.stringify(item)]).size>40*1024*1024)throw Error('المكتبة وصلت للحجم المتاح (40 ميجابايت). احذف صورًا قديمة أو صغّرها.');
   data[tab].push(item);$('#add').reset();fields();dirty=true;message('اتضافت للمسودة. راجع المعاينة واضغط نشر لإظهارها للزوار.');
  }catch(err){message(err.message)}finally{busy=false;render()}};
  async function api(endpoint,method='GET',body){
