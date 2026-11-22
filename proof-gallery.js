@@ -1,9 +1,11 @@
 (() => {
- const safeImage=v=>typeof v==='string'&&/^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v);
+ const safeImage=v=>window.ShapeXCloud?.isPhoto(v)||typeof v==='string'&&/^data:image\/(webp|png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(v);
  const section=document.createElement('section');section.id='results';section.className='section-shell proof-section';section.hidden=true;
  section.innerHTML='<div class="section-heading"><h2>نتايج وآراء عملائنا</h2><p>رحلات مختلفة. وخطة تخص كل شخص.</p></div><div id="transformations-block" hidden><h3>قبل وبعد</h3><div class="proof-grid" id="transformations-grid"></div></div><div id="testimonials-block" hidden><h3>آراء العملاء</h3><div class="proof-grid" id="testimonials-grid"></div></div>';
  document.querySelector('#packages').before(section);
- function image(src,alt){const im=document.createElement('img');im.src=src;im.alt=alt;im.loading='lazy';return im;}
+ const photoObserver=new IntersectionObserver(entries=>{for(const e of entries){if(!e.isIntersecting)continue;photoObserver.unobserve(e.target);window.ShapeXCloud.photo(e.target.dataset.photo).then(value=>e.target.src=value).catch(()=>e.target.alt='الصورة غير متاحة');}},{rootMargin:'200px'});
+ function image(src,alt){const im=document.createElement('img');if(window.ShapeXCloud.isPhoto(src)){im.dataset.photo=src;im.width=600;im.height=600}else im.src=src;im.alt=alt;im.loading='lazy';return im;}
+ function observePhotos(root){root.querySelectorAll('img[data-photo]').forEach(im=>photoObserver.observe(im))}
  function render(data){
   for(const key of ['transformations','testimonials']){
    const grid=document.querySelector('#'+key+'-grid');
@@ -18,7 +20,7 @@
     if(item.caption){const p=document.createElement('p');p.textContent=String(item.caption).slice(0,500);card.append(p)}grid.append(card);
    }
    document.querySelector('#'+key+'-block').hidden=!grid.children.length;
-   if(grid.children.length)makeRail(grid,key);
+   if(grid.children.length){makeRail(grid,key);observePhotos(grid)}
   }
   section.hidden=!section.querySelector('.proof-card');
  }
@@ -44,7 +46,7 @@
   grid.addEventListener('mouseenter',()=>state.hover=true);grid.addEventListener('mouseleave',()=>state.hover=false);
   grid.addEventListener('focusin',()=>state.focus=true);grid.addEventListener('focusout',e=>{if(!grid.contains(e.relatedTarget))state.focus=false});
   grid.addEventListener('pointerdown',()=>state.until=performance.now()+12000,{passive:true});grid.addEventListener('wheel',()=>state.until=performance.now()+12000,{passive:true});
-  cards.forEach(card=>{const button=document.createElement('button');button.type='button';button.className='proof-open';button.textContent='تكبير الصور';button.onclick=()=>{restoreFocus=button;viewBody.replaceChildren();for(const child of card.children)if(child!==button)viewBody.append(child.cloneNode(true));viewer.showModal();close.focus()};card.append(button)});
+  cards.forEach(card=>{const button=document.createElement('button');button.type='button';button.className='proof-open';button.textContent='تكبير الصور';button.onclick=()=>{restoreFocus=button;viewBody.replaceChildren();for(const child of card.children)if(child!==button)viewBody.append(child.cloneNode(true));viewer.showModal();observePhotos(viewBody);close.focus()};card.append(button)});
   if(cards.length>1){const twin=group.cloneNode(true);twin.setAttribute('aria-hidden','true');twin.inert=true;twin.classList.add('proof-twin');grid.append(twin);}
   const observer=new IntersectionObserver(entries=>state.visible=entries[0].isIntersecting,{rootMargin:'80px'});observer.observe(grid);
   reducedMotion.addEventListener('change',()=>{if(reducedMotion.matches){state.auto=false;label()}});
@@ -54,7 +56,7 @@
   for(const s of rails){if(!s.visible||!s.auto||s.hover||s.focus||now<s.until||document.hidden||viewer.open||document.documentElement.classList.contains('motion-disabled'))continue;const span=s.group.getBoundingClientRect().width;if(!span)continue;s.carry=(s.carry||0)+22*dt;const pixels=Math.floor(s.carry);s.carry-=pixels;if(!pixels)continue;let next=s.grid.scrollLeft+(s.reverse?-1:1)*pixels;if(next<0)next+=span;if(next>=span)next-=span;s.grid.scrollLeft=next;}
   requestAnimationFrame(tick);
  }requestAnimationFrame(tick);
- fetch('site-content.json',{cache:'no-cache'}).then(r=>r.ok?r.json():Promise.reject()).then(render).catch(()=>{});
+ window.ShapeXCloud.load().then(result=>render(result.data)).catch(()=>{});
  document.querySelector('#language')?.addEventListener('click',()=>{const en=document.documentElement.lang==='en';section.querySelector('h2').textContent=en?'Client results & reviews':'نتايج وآراء عملائنا';section.querySelector('.section-heading p').textContent=en?'Different journeys. A plan for each person.':'رحلات مختلفة. وخطة تخص كل شخص.';document.querySelector('#transformations-block h3').textContent=en?'Before & after':'قبل وبعد';document.querySelector('#testimonials-block h3').textContent=en?'Client reviews':'آراء العملاء';});
 })();
 
